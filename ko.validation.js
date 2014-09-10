@@ -151,40 +151,46 @@
   };
   ko.validation.addRule('custom');
 
-  var original_init = ko.bindingHandlers.value.init;
-  ko.bindingHandlers.value.init = function(element, valueAccessor, allBindingsAccessor) {
-    original_init(element, valueAccessor, allBindingsAccessor);
+  var extend_binding_with_validation = function(name) {
+    var original_init = ko.bindingHandlers[name].init;
+    ko.bindingHandlers[name].init = function(element, valueAccessor, allBindingsAccessor) {
+      original_init(element, valueAccessor, allBindingsAccessor);
 
-    var observable = valueAccessor(),
-        allBindings = allBindingsAccessor(),
-        bindingOptions = allBindings.validationOptions,
-        observableOptions = typeof(observable.validationOptions) == 'object' ? observable.validationOptions : null,
-        globalOptions = ko.validation.settings,
-        finalOptions = ko.utils.extend({}, globalOptions);
-    
-    if (observableOptions) {
-      finalOptions = ko.utils.extend(finalOptions, observableOptions);
-    }
-    if (bindingOptions) {
-      finalOptions = ko.utils.extend(finalOptions, bindingOptions);
-    }
+      var observable = valueAccessor(),
+          allBindings = allBindingsAccessor(),
+          bindingOptions = allBindings.validationOptions,
+          observableOptions = typeof(observable.validationOptions) == 'object' ? observable.validationOptions : null,
+          globalOptions = ko.validation.settings,
+          finalOptions = ko.utils.extend({}, globalOptions);
 
-    if (!(observable.validate && finalOptions.insertMessages)) {
-      return;
-    }
-    // insert a validation message element
-    var div = document.createElement('div');
-    div.className = finalOptions.errorMessageClass;
-    element.parentNode.insertBefore(div, element.nextSibling);
-    if (finalOptions.messageTemplate) {
-      ko.renderTemplate(finalOptions.messageTemplate, {
-        field: observable
-      }, null, div, 'replaceNode');
-    }
-    ko.applyBindingsToNode(div, {
-      validationMessage: observable
-    });
+      if (observableOptions) {
+        finalOptions = ko.utils.extend(finalOptions, observableOptions);
+      }
+      if (bindingOptions) {
+        finalOptions = ko.utils.extend(finalOptions, bindingOptions);
+      }
+
+      if (!(observable.validate && finalOptions.insertMessages)) {
+        return;
+      }
+      // insert a validation message element
+      var div = document.createElement('div');
+      div.className = finalOptions.errorMessageClass;
+      element.parentNode.insertBefore(div, element.nextSibling);
+
+      if (finalOptions.messageTemplate) {
+        ko.renderTemplate(finalOptions.messageTemplate, {
+          field: observable
+        }, null, div, 'replaceNode');
+      }
+      ko.applyBindingsToNode(div, {
+        validationMessage: observable
+      });
+    };
   };
+  extend_binding_with_validation('textInput');
+  extend_binding_with_validation('value');
+
   ko.bindingHandlers.validationMessage = {
     update: function(element, valueAccessor) {
       var observable = valueAccessor(),
@@ -197,4 +203,5 @@
       element[element.innerText ? 'innerText' : 'textContent'] = result.message;
     }
   };
+
 })();
